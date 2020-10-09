@@ -1,6 +1,6 @@
 import React, {useState,useEffect,useContext} from 'react';
 import { Table , Space, Button } from 'antd';
-import PopupComponent from '../PopupComponent/PopupComponent';
+import UserForm from '../PopupComponent/UserForm';
 import 'antd/dist/antd.css';
 import { connect} from 'react-redux';
 import * as action from '../../Actions';
@@ -19,6 +19,7 @@ const UsersComponent = (props) => {
         setUsers(props.users)
     },[props.users])
 
+
     /**
      * Function to update a user
      * @function onEditClick
@@ -28,6 +29,7 @@ const UsersComponent = (props) => {
         setShowModel(true)
         setModelState({...modelState, index:key,popupType:'user'})
     }
+
 
     /**
      * Function to delete user
@@ -48,6 +50,14 @@ const UsersComponent = (props) => {
         setShowModel(flag)
         setModelState({...modelState, index:null,popupType:'user'})
     }
+
+    /**
+     * Function to hide the form
+     * @function cancelClick
+     */
+    const cancelClick = () => {
+        setShowModel(false)
+    }
       return(
           <div className='users_component'>
             <Button onClick={() => createUser(true)}>Create User</Button>
@@ -65,7 +75,7 @@ const UsersComponent = (props) => {
                 />
             </Table>
             {
-                showModel ? <PopupComponent type='user' visible={true}/> : ''
+                showModel ? <UserForm cancelClick={cancelClick}/> : ''
             }
           </div>
         

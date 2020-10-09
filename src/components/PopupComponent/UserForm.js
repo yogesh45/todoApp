@@ -5,13 +5,12 @@ import './index.css';
 import * as action from '../../Actions';
 import {ModelContext} from '../AppComponent';
 import {connect} from 'react-redux'
-import { Form, Input, DatePicker } from "antd";
+import {message, Form, Input, DatePicker } from "antd";
 
-const PopupComponent = (props) => {
+const UserForm = (props) => {
     const [modelState, setModelState] = useContext(ModelContext)
-    const [popupType,setPopupType] = useState(props.type);
     const [popupTitle, setPopupTitle] = useState("");
-    const [ModelVisible, setModelVisible] = useState(props.visible);
+    const [ModelVisible, setModelVisible] = useState(true);
     const [action,setAction] = useState("");
     const [addedDate,setAddedDate] = useState('');
     const [addedMoment,setAddedMoment] = useState("");
@@ -23,7 +22,9 @@ const PopupComponent = (props) => {
      * @function onCancelClick
      */
     const CancelClick = () => {
+        props.cancelClick(false)
         setModelState({...modelState, index:null,popupType:''})
+        setModelVisible(false)
     }
 
     /**
@@ -33,25 +34,36 @@ const PopupComponent = (props) => {
 
      async function updateData () {
         setIsLoading(true)
-        if(modelState.popupType === 'todo'){
-            let tempTodo = [...props.todos]
-            tempTodo[modelState.index].todo = action;
-            tempTodo[modelState.index].addedDate = addedDate;
-            tempTodo[modelState.index].addedMoment = addedMoment;
-            await wait(2000);
-            setIsLoading(false)
-            props.AddTodo(tempTodo)
-        }
-        else if(modelState.popupType === 'user'){
-            let tempUser = [...props.users];
-            tempUser[modelState.index].name = action;
-            tempUser[modelState.index].addedDate = addedDate;
-            tempUser[modelState.index].addedMoment = addedMoment;
-            await wait(2000);
-            setIsLoading(false)
-            props.AddUser(tempUser)
-        }
+        let tempUser = [...props.users];
+        tempUser[modelState.index].name = action;
+        tempUser[modelState.index].addedDate = addedDate;
+        tempUser[modelState.index].addedMoment = addedMoment;
+        await wait(2000);
+        setIsLoading(false)
+        props.AddUser(tempUser)
         setModelState({...modelState, index:null,popupType:''})
+    }
+    
+    /**
+     * Method to validate the data in the form
+     * @function validateData
+     */
+    const validateData = () => {
+        if(action == '' && addedDate == ''){
+            message.error('Please fill all the details to save');
+            return false
+        }
+        else if(action == ''){
+            message.error('Please enter the user name to save');
+            return false
+        }
+        else if(addedDate == ''){
+            message.error('Please select the date to save');
+            return false
+        }
+        else{
+            return true
+        }
     }
 
     /**
@@ -59,21 +71,9 @@ const PopupComponent = (props) => {
      * @function saveClick
      */
     async function saveData() {
-        setIsLoading(true)
-        if(modelState.popupType === 'todo'){
-            let tempTodo = [...props.todos]
-            let newObject = {
-                "key" : tempTodo.length,
-                "todo":action,
-                "addedDate":addedDate,
-                "addedMoment":addedMoment._d
-            }
-            tempTodo.push(newObject);
-            await wait(2000);
-            setIsLoading(false)
-            props.AddTodo(tempTodo)
-        }
-        else if(modelState.popupType === 'user'){
+        const validateFlag = validateData()
+        if(validateFlag){
+            setIsLoading(true)
             let tempUser = [...props.users];
             let newObject = {
                 "key" : tempUser.length,
@@ -83,11 +83,11 @@ const PopupComponent = (props) => {
             }
             tempUser.push(newObject)
             await wait(2000);
-            setIsLoading(true)
+            setIsLoading(false)
             props.AddUser(tempUser)
+            setModelState({...modelState, index:null,popupType:''});
+            props.cancelClick();
         }
-          
-        setModelState({...modelState, index:null,popupType:''})
     }
 
     
@@ -101,10 +101,10 @@ const PopupComponent = (props) => {
      * @param - event - e
      */
     
-     const DateChange = (moment, string) => {
+    const DateChange = (moment, string) => {
         setAddedMoment(moment)
         setAddedDate(string)
-     }
+    }
 
     /**
      * Function to get the value from the input
@@ -119,20 +119,14 @@ const PopupComponent = (props) => {
      * UseEffect to change the Modal title if the popupType changes
      */
     useEffect(() => {
-        setPopupType(props.type)
-        modelState.popupType === 'todo'? setPopupTitle('Add New Todo') : modelState.popupType === 'user' ? setPopupTitle('Add New User') : setPopupTitle('')
-        modelState.popupType === 'todo' || modelState.popupType === 'user' ? setModelVisible(true) : setModelVisible(false);
-        if(modelState.index !== null && modelState.popupType === 'todo'){
-            setAction(props.todos[modelState.index].todo);
-            setAddedDate(props.todos[modelState.index].addedDate);
-            setAddedMoment(moment(props.todos[modelState.index].addedMoment));
-        }
-        else if(modelState.index !== null && modelState.popupType === 'user'){
+         if(modelState.index !== null){
+            setPopupTitle('Add New User')
             setAction(props.users[modelState.index].name);
             setAddedDate(props.users[modelState.index].addedDate);
             setAddedMoment(moment(props.users[modelState.index].addedMoment));
         }
         else{
+            setPopupTitle('Update User')
             setAction('');
             setAddedDate('');
             setAddedMoment('')
@@ -146,8 +140,8 @@ const PopupComponent = (props) => {
           okText="Save"
           cancelText="Cancel">
             <Form form={form} layout="vertical">
-                <Form.Item label={modelState.popupType === 'todo' ? "Action" : "Name"}>
-                    <Input placeholder={modelState.popupType === 'todo' ? "Action" : "Name"} value={action} onChange={InputChange}/>
+                <Form.Item label={"Name"}>
+                    <Input placeholder={"Name"} value={action} onChange={InputChange}/>
                 </Form.Item>
                 <Form.Item label='DateAdded' required>
                     <DatePicker placeholder='Select a date' value={addedMoment} onChange={DateChange}/>
@@ -158,8 +152,7 @@ const PopupComponent = (props) => {
 }
 const mapStateToProps = global_state => {
     return{
-        todos:global_state.todo.todos,
         users:global_state.user.users
     }
 }
-export default connect(mapStateToProps,action)(PopupComponent)
+export default connect(mapStateToProps,action)(UserForm)

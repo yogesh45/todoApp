@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Table, Space, Button } from 'antd';
 import 'antd/dist/antd.css';
-import PopupComponent from '../PopupComponent/PopupComponent';
+import TodoForm from '../PopupComponent/TodoForm';
 import { connect} from 'react-redux';
 import * as action from '../../Actions';
 import {ModelContext} from '../AppComponent'
@@ -36,7 +36,7 @@ const TodoComponent = (props) => {
      */
     const createTodo = (flag) => {
         setShowModel(flag)
-        setModelState({...modelState, index:null,popupType:'todo'})
+        setModelState({...modelState, index:null})
     }
 
     /**
@@ -52,6 +52,13 @@ const TodoComponent = (props) => {
         props.AddTodo(tempTodos)
     }
 
+    /**
+     * Function to hide the form
+     * @function cancelClick
+     */
+    const cancelClick = () => {
+        setShowModel(false)
+    }
     return(
         <div className='todo_component'>
         <Button onClick={ () => createTodo(true)}>Create Todo</Button>
@@ -69,7 +76,7 @@ const TodoComponent = (props) => {
             />
         </Table>
         {
-            showModel ? <PopupComponent /> : ''
+            showModel ? <TodoForm cancelClick={cancelClick} /> : ''
         }
         </div>
     )
